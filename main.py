@@ -57,7 +57,7 @@ def measure_power():
                 cycle_tot /= n
                 pwr_avg += cycle_tot
                 # if large enough power, determine whether inverted
-                if abs(cycle_tot * CALIB_MULT) > 1.5:
+                if abs(cycle_tot * CALIB_MULT) > 6.0:
                     invert = (cycle_tot < 0)
                 cycle_tot = 0.0
                 n = 0
