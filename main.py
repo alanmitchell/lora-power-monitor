@@ -9,7 +9,7 @@ import busio
 from analogio import AnalogIn
 
 CYCLES_TO_MEASURE = 60       # full cycles to measure for one reading
-CALIB_MULT = 6599.0          # multiplier to convert v * i measured into Watts
+CALIB_MULT = 21308.0          # multiplier to convert v * i measured into Watts
 
 # Identify the pins that have the voltage, current and reference voltage.
 v_in = AnalogIn(board.A0)
@@ -34,7 +34,7 @@ def measure_power():
     n = 0
     cycle_starts = 0
 
-    invert = False      # negate reading
+    invert = False      # negate reading if True.
     while True:
         vref = vref_in.value
         v = v_in.value
