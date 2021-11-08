@@ -3,7 +3,6 @@ AC/AC power adapter and current sampled from a CT.  Both current and voltage
 waveforms are connected to a reference voltage part way between microcontroller
 Vcc and ground.
 """
-import time
 import board
 import busio
 from analogio import AnalogIn
@@ -52,10 +51,7 @@ def measure_power():
             # a new cycle has started with this reading
             cycle_starts += 1
 
-            if cycle_starts == 1:
-                # the first cycle has started
-                st = time.monotonic()
-            else:
+            if cycle_starts > 1:
                 # calculate average power from last cycle and add to running total
                 # for all cycles.  reset cycle counters.
                 cycle_tot /= n
@@ -67,12 +63,11 @@ def measure_power():
                 n = 0
 
             if cycle_starts > CYCLES_TO_MEASURE:
-                t_exec = time.monotonic() - st
                 pwr_avg /= CYCLES_TO_MEASURE
                 pwr_avg *= CALIB_MULT
                 if invert:
                     pwr_avg = -pwr_avg
-                return pwr_avg, t_exec
+                return pwr_avg
         
         if cycle_starts > 0:
             # because of delay in reading voltage relative to current, interpolate the 
@@ -85,6 +80,5 @@ def measure_power():
 
 
 while True:
-    pwr, t_exec = measure_power()
-    print(t_exec, pwr)
+    pwr = measure_power()
     prnu(pwr)
