@@ -20,6 +20,12 @@ vref_in = AnalogIn(board.A2)
 # LoRaWAN transceiver module.
 uart = busio.UART(board.TX, board.RX, baudrate=9600)
 
+def prnu(x, newline=True):
+    """Prints the string representation of the object x to the UART.
+    """
+    s = str(x) + ('\n' if newline else '')
+    uart.write(bytes(s, 'utf-8'))
+
 def measure_power():
     """Returns average power measured across CYCLES_TO_MEASURE full AC
     cycles.
@@ -79,6 +85,4 @@ def measure_power():
 while True:
     pwr, t_exec = measure_power()
     print(t_exec, pwr)
-    out = bytes('%s\n' % pwr, 'utf-8')
-    uart.write(out)
-    #time.sleep(0.5)
+    prnu(pwr)
