@@ -3,6 +3,7 @@ AC/AC power adapter and current sampled from a CT.  Both current and voltage
 waveforms are connected to a reference voltage part way between microcontroller
 Vcc and ground.
 """
+import time
 import board
 import busio
 from analogio import AnalogIn
@@ -82,3 +83,5 @@ def measure_power():
 while True:
     pwr = measure_power()
     prnu(pwr)
+    #prnu(vref_in.value)
+    #time.sleep(1)
