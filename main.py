@@ -33,6 +33,13 @@ def measure_power():
     calculate average power for each cycle, and then average the cycle values.
     """
 
+    # Start by getting a good average for the reference voltage
+    n_ref = 20
+    vref = 0
+    for i in range(n_ref):
+        vref += vref_in.value
+    vref /= n_ref
+
     v1 = 0.0           # prior voltage reading
     v2 = 0.0           # two prior voltage reading
     pwr_avg = 0.0
@@ -42,7 +49,6 @@ def measure_power():
 
     invert = False      # negate reading if True.
     while True:
-        vref = vref_in.value
         i = i_in.value
         v = v_in.value
         v = (v - vref) / vref
@@ -73,7 +79,7 @@ def measure_power():
         if cycle_starts > 0:
             # because of delay in reading voltage relative to current, interpolate the 
             # voltage back to the time the current was read by weighting in prior reading.
-            cycle_tot += (v * 0.6667 + v1 * 0.3333) * i
+            cycle_tot += (v + v1) / 2.0 * i
             n += 1
         
         v2 = v1
@@ -83,5 +89,3 @@ def measure_power():
 while True:
     pwr = measure_power()
     prnu(pwr)
-    #prnu(vref_in.value)
-    #time.sleep(1)
