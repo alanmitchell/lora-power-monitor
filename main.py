@@ -34,7 +34,7 @@ def measure_power():
     """
 
     # Start by getting a good average for the reference voltage
-    n_ref = 20
+    n_ref = 50
     vref = 0
     for i in range(n_ref):
         vref += vref_in.value
@@ -67,6 +67,7 @@ def measure_power():
                 if abs(cycle_tot * CALIB_MULT) > 6.0:
                     invert = (cycle_tot < 0)
                 cycle_tot = 0.0
+                #samples = n
                 n = 0
 
             if cycle_starts > CYCLES_TO_MEASURE:
@@ -74,12 +75,15 @@ def measure_power():
                 pwr_avg *= CALIB_MULT
                 if invert:
                     pwr_avg = -pwr_avg
+                #prnu(samples)
                 return pwr_avg
         
         if cycle_starts > 0:
             # because of delay in reading voltage relative to current, interpolate the 
             # voltage back to the time the current was read by weighting in prior reading.
-            cycle_tot += (v + v1) / 2.0 * i
+            # v1 weighting is determined by length of time for one analog read / total time
+            # for one sample including all the code.
+            cycle_tot += (v * 0.76 + v1 * 0.24) * i
             n += 1
         
         v2 = v1
@@ -89,3 +93,12 @@ def measure_power():
 while True:
     pwr = measure_power()
     prnu(pwr)
+    
+    # st = time.monotonic_ns()
+    # for i in range(100):
+    #     _ = v_in.value
+    #     _ = i_in.value
+    #     _ = vref_in.value
+    # elapsed = time.monotonic_ns() - st
+    # prnu(elapsed/300/1000)
+ 
