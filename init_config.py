@@ -1,21 +1,27 @@
 #!/usr/bin/env python3
+"""Configures a LoRa-E5 device to work on the US915 Things Network.
+"""
 
 from secrets import token_hex
 from pathlib import Path
 import time
 from serial import Serial
 
-APP_EUI = '0000000000000001'
+SER_PORT = '/dev/ttyUSB0'
+APP_EUI = '0000000000000001'      # will be programmed into E5 device
 
+# A CSV file is used to track Device IDs and Keys
 FN_KEYS = 'keys.csv'
 if not Path(FN_KEYS).exists():
     # start the file with a header row
     with open(FN_KEYS, 'w') as fkeys:
         fkeys.write('dev_eui,app_eui,app_key\n')
 
-# Generate an App Key
+# Generate a random App Key
 app_key = token_hex(16).upper()
 
+# Commands that need to be executed to configure the device; will be later
+# prefaced with an AT+.
 cmds = (
     'FDEFAULT',
     'UART=TIMEOUT, 2000',
@@ -32,7 +38,7 @@ cmds = (
     'JOIN=AUTO,10,1200,0',
 )
 try:
-    p = Serial('/dev/ttyUSB0', timeout=1.0)
+    p = Serial(SER_PORT, timeout=1.0)
 
     # determine the Dev EUI of the device
     p.write(b'AT+ID=DEVEUI\n')
@@ -52,5 +58,6 @@ except Exception as e:
 
 finally:
     p.close()
+    # Save the IDs and App Key for this device.
     with open(FN_KEYS, 'a') as fkeys:
         fkeys.write(f'{dev_eui},{APP_EUI},{app_key}\n')
