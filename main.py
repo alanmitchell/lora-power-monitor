@@ -3,13 +3,23 @@ AC/AC power adapter and current sampled from a CT.  Both current and voltage
 waveforms are connected to a reference voltage part way between microcontroller
 Vcc and ground.
 """
+from adafruit_binascii import hexlify
 import time
 import board
 import busio
 from analogio import AnalogIn
 
+PCT_CHG_THRESH = 0.03     # expressed as fraction, i.e. 0.03 is 3%
+ABS_CHG_THRESH = 2.0      # Watts
+MAX_READING_GAP = 30     # If haven't sent in this number of readings, send anyway
+MIN_READING_GAP = 7       # LoRaWAN can't accept readings too close in time. Min gap
+                          #    expressed in number of measurements.
+
+DEVICE_ID = 1             # ID identifying type of E5 Sensor.  1 = Power Sensor
+device_bytes = DEVICE_ID.to_bytes(1, 'big')
+
 CYCLES_TO_MEASURE = 60       # full cycles to measure for one reading
-CALIB_MULT = 21308.0          # multiplier to convert v * i measured into Watts
+CALIB_MULT = 27464.0          # multiplier to convert v * i measured into Watts
 
 # Identify the pins that have the voltage, current and reference voltage.
 v_in = AnalogIn(board.A0)
@@ -67,7 +77,6 @@ def measure_power():
                 if abs(cycle_tot * CALIB_MULT) > 6.0:
                     invert = (cycle_tot < 0)
                 cycle_tot = 0.0
-                #samples = n
                 n = 0
 
             if cycle_starts > CYCLES_TO_MEASURE:
@@ -75,7 +84,10 @@ def measure_power():
                 pwr_avg *= CALIB_MULT
                 if invert:
                     pwr_avg = -pwr_avg
-                #prnu(samples)
+                # don't return negative values
+                if pwr_avg < 0.0:
+                    pwr_avg = 0
+
                 return pwr_avg
         
         if cycle_starts > 0:
@@ -89,16 +101,61 @@ def measure_power():
         v2 = v1
         v1 = v
 
+def bytes_to_string(data):
+    s = ''.join([chr(b) for b in data])
+    return s
+
+def send_pwr_readings(prior, current):
+    print(prior, current)
+    # assemble readings into 2-byte values, units are 0.1 W
+    bytes_prior = int(prior * 10.0).to_bytes(2, 'big')
+    bytes_current = int(current * 10.0).to_bytes(2, 'big')
+    message_type = b'\x01'
+    msg = device_bytes + message_type + bytes_prior + bytes_current
+    print(bytes_to_string(hexlify(msg)))
+
+def send_reboot():
+    print('reboot')
+    msg = device_bytes + b'\x02'
+    print(bytes_to_string(hexlify(msg)))
+
+send_reboot()
+time.sleep(6.0)    # need to wait for send to continue.
+
+# The last power value that was sent (Watts)
+pwr_last_sent_value = None
+
+# counter that track how many measurments since last power value was sent
+ix = MAX_READING_GAP      # ensures that a reading will be sent immediately
+
+# track the one-prior power reading because that is sent along with the new value
+pwr_prior = None
 
 while True:
+    ix += 1
     pwr = measure_power()
-    prnu(pwr)
-    
-    # st = time.monotonic_ns()
-    # for i in range(100):
-    #     _ = v_in.value
-    #     _ = i_in.value
-    #     _ = vref_in.value
-    # elapsed = time.monotonic_ns() - st
-    # prnu(elapsed/300/1000)
- 
+    do_send = False
+    if pwr_prior is not None:
+         
+        if pwr_last_sent_value is not None:
+            do_send = abs(pwr - pwr_last_sent_value) >= ABS_CHG_THRESH
+            if pwr_last_sent_value != 0.0:
+                do_send = do_send and abs((pwr - pwr_last_sent_value) / pwr_last_sent_value) >= PCT_CHG_THRESH
+        else:
+            # if nothing has been sent yet, send a reading.
+            do_send = True
+
+        # If we exceeded max measure count, send
+        if ix >= MAX_READING_GAP: do_send = True
+
+        # if we haven't waited long enough since last send, don't send.
+        if ix < MIN_READING_GAP: do_send = False
+
+        if do_send:
+            send_pwr_readings(pwr_prior, pwr)
+            pwr_last_sent_value = pwr
+            ix = 0
+
+    pwr_prior = pwr
+
+    print(ix)
