@@ -14,11 +14,8 @@ PCT_CHG_THRESH = 0.03     # Power must change by at least this percent, expresse
                           #    fraction, i.e. 0.03 is 3%
 ABS_CHG_THRESH = 2.0      # Power must change by at least this many Watts
 MAX_READING_GAP = 300      # If haven't sent in this number of measurements, force a send
-MIN_READING_GAP = 8       # LoRaWAN can't accept readings too close in time. Min gap
+MIN_READING_GAP = 7       # LoRaWAN can't accept readings too close in time. Min gap
                           #    expressed in number of measurements.
-
-DEVICE_ID = 1             # ID identifying type of E5 Sensor.  1 = Power Sensor
-device_bytes = DEVICE_ID.to_bytes(1, 'big')
 
 CYCLES_TO_MEASURE = 60       # full cycles to measure for one reading
 CALIB_MULT = 27464.0          # multiplier to convert v * i measured into Watts
@@ -102,25 +99,21 @@ def measure_power():
         v2 = v1
         v1 = v
 
-def bytes_to_string(data):
-    s = ''.join([chr(b) for b in data])
-    return s
+def send_pwr_readings(pwr_list):
+    print(pwr_list)
+    msg = b'\x01'
 
-def send_pwr_readings(current, prior):
-    print(current, prior)
     # assemble readings into 2-byte values, units are 0.1 W
-    bytes_current = int(current * 10.0 + 0.5).to_bytes(2, 'big')
-    bytes_prior = int(prior * 10.0 + 0.5).to_bytes(2, 'big')
-    message_type = b'\x01'
-    msg = device_bytes + message_type + bytes_current + bytes_prior
+    for pwr in pwr_list:
+        msg += int(pwr * 10.0 + 0.5).to_bytes(2, 'big')
+
     msghex = hexlify(msg)
     cmd = bytes('AT+MSGHEX="', 'utf-8') + msghex + bytes('"\n', 'utf-8')
     uart.write(cmd)
 
 def send_reboot():
     print('reboot')
-    msg = device_bytes + b'\x02'
-    msghex = hexlify(msg)
+    msghex = hexlify(b'\x02')
     cmd = bytes('AT+MSGHEX="', 'utf-8') + msghex + bytes('"\n', 'utf-8')
     uart.write(cmd)
 
@@ -140,7 +133,7 @@ time.sleep(7.0)    # need to wait for send to continue.
 # The last power value that was sent (Watts)
 pwr_last_sent_value = None
 
-# counter that track how many measurments since last power value was sent
+# counter that track how many measurements since last power value was sent
 ix = MAX_READING_GAP      # ensures that a reading will be sent immediately
 
 # track the one-prior power reading because that is sent along with the new value
@@ -167,7 +160,7 @@ while True:
         if ix < MIN_READING_GAP: do_send = False
 
         if do_send:
-            send_pwr_readings(pwr, pwr_prior)
+            send_pwr_readings([pwr_prior, pwr])
             pwr_last_sent_value = pwr
             ix = 0
 
