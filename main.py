@@ -33,15 +33,9 @@ vref_in = AnalogIn(board.A2)
 uart = busio.UART(
     board.TX, board.RX, 
     baudrate=9600, 
-    timeout=0.02,
+    timeout=0.01,
     receiver_buffer_size=128,     # when downlink is received, about 90 bytes are received.
 )
-
-def prnu(x, newline=True):
-    """Prints the string representation of the object x to the UART.
-    """
-    s = str(x) + ('\n' if newline else '')
-    uart.write(bytes(s, 'utf-8'))
 
 def measure_power():
     """Returns average power measured across CYCLES_TO_MEASURE full AC
@@ -112,13 +106,13 @@ def bytes_to_string(data):
     s = ''.join([chr(b) for b in data])
     return s
 
-def send_pwr_readings(prior, current):
-    print(prior, current)
+def send_pwr_readings(current, prior):
+    print(current, prior)
     # assemble readings into 2-byte values, units are 0.1 W
-    bytes_prior = int(prior * 10.0 + 0.5).to_bytes(2, 'big')
     bytes_current = int(current * 10.0 + 0.5).to_bytes(2, 'big')
+    bytes_prior = int(prior * 10.0 + 0.5).to_bytes(2, 'big')
     message_type = b'\x01'
-    msg = device_bytes + message_type + bytes_prior + bytes_current
+    msg = device_bytes + message_type + bytes_current + bytes_prior
     msghex = hexlify(msg)
     cmd = bytes('AT+MSGHEX="', 'utf-8') + msghex + bytes('"\n', 'utf-8')
     uart.write(cmd)
@@ -135,6 +129,7 @@ def check_for_downlink(lin):
     if 'PORT: 1; RX: "' in lin:
         data = lin.split('"')[-2]
         if data[:2] == '01':
+            # Request to change Data Rate
             dr = int(data[2:4])
             cmd = bytes('AT+DR=%s\n' % dr, 'utf-8')
             uart.write(cmd)
@@ -172,7 +167,7 @@ while True:
         if ix < MIN_READING_GAP: do_send = False
 
         if do_send:
-            send_pwr_readings(pwr_prior, pwr)
+            send_pwr_readings(pwr, pwr_prior)
             pwr_last_sent_value = pwr
             ix = 0
 
