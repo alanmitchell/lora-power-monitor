@@ -9,10 +9,12 @@ import board
 import busio
 from analogio import AnalogIn
 
-PCT_CHG_THRESH = 0.03     # expressed as fraction, i.e. 0.03 is 3%
-ABS_CHG_THRESH = 2.0      # Watts
-MAX_READING_GAP = 30     # If haven't sent in this number of readings, send anyway
-MIN_READING_GAP = 7       # LoRaWAN can't accept readings too close in time. Min gap
+# Constants that control when power readings are sent via LoRaWAN
+PCT_CHG_THRESH = 0.03     # Power must change by at least this percent, expressed as 
+                          #    fraction, i.e. 0.03 is 3%
+ABS_CHG_THRESH = 2.0      # Power must change by at least this many Watts
+MAX_READING_GAP = 300      # If haven't sent in this number of measurements, force a send
+MIN_READING_GAP = 8       # LoRaWAN can't accept readings too close in time. Min gap
                           #    expressed in number of measurements.
 
 DEVICE_ID = 1             # ID identifying type of E5 Sensor.  1 = Power Sensor
@@ -28,7 +30,12 @@ vref_in = AnalogIn(board.A2)
 
 # Serial port dumping debug information now but ultimately for talking the 
 # LoRaWAN transceiver module.
-uart = busio.UART(board.TX, board.RX, baudrate=9600)
+uart = busio.UART(
+    board.TX, board.RX, 
+    baudrate=9600, 
+    timeout=0.02,
+    receiver_buffer_size=128,     # when downlink is received, about 90 bytes are received.
+)
 
 def prnu(x, newline=True):
     """Prints the string representation of the object x to the UART.
@@ -108,19 +115,32 @@ def bytes_to_string(data):
 def send_pwr_readings(prior, current):
     print(prior, current)
     # assemble readings into 2-byte values, units are 0.1 W
-    bytes_prior = int(prior * 10.0).to_bytes(2, 'big')
-    bytes_current = int(current * 10.0).to_bytes(2, 'big')
+    bytes_prior = int(prior * 10.0 + 0.5).to_bytes(2, 'big')
+    bytes_current = int(current * 10.0 + 0.5).to_bytes(2, 'big')
     message_type = b'\x01'
     msg = device_bytes + message_type + bytes_prior + bytes_current
-    print(bytes_to_string(hexlify(msg)))
+    msghex = hexlify(msg)
+    cmd = bytes('AT+MSGHEX="', 'utf-8') + msghex + bytes('"\n', 'utf-8')
+    uart.write(cmd)
 
 def send_reboot():
     print('reboot')
     msg = device_bytes + b'\x02'
-    print(bytes_to_string(hexlify(msg)))
+    msghex = hexlify(msg)
+    cmd = bytes('AT+MSGHEX="', 'utf-8') + msghex + bytes('"\n', 'utf-8')
+    uart.write(cmd)
+
+def check_for_downlink(lin):
+    lin = str(lin)
+    if 'PORT: 1; RX: "' in lin:
+        data = lin.split('"')[-2]
+        if data[:2] == '01':
+            dr = int(data[2:4])
+            cmd = bytes('AT+DR=%s\n' % dr, 'utf-8')
+            uart.write(cmd)
 
 send_reboot()
-time.sleep(6.0)    # need to wait for send to continue.
+time.sleep(7.0)    # need to wait for send to continue.
 
 # The last power value that was sent (Watts)
 pwr_last_sent_value = None
@@ -157,5 +177,10 @@ while True:
             ix = 0
 
     pwr_prior = pwr
-
     print(ix)
+
+    while True:
+        lin = uart.readline()
+        if lin is None: break
+        print(lin)
+        check_for_downlink(lin)
