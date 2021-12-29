@@ -2,9 +2,8 @@
 The radio module used is a SEEED Studio Grove E5. Voltage is sampled from an 
 Jameco 5VAC power adapter and current sampled from a CR Magnetics CR 3110-3000 CT.
 Both current and voltage waveforms are connected to a 2.048 Volt reference voltage 
-so that AC swing stays within limits of the microcontroller ADC.
+so that the 1AC swing stays within limits of the microcontroller ADC.
 """
-from adafruit_binascii import hexlify
 import time
 import board
 import busio
@@ -105,21 +104,19 @@ def send_pwr_readings(pwr_list):
     """Sends power readings in 'pwr_list' list to the LoRaWAN module.
     """
     print(pwr_list)     # debug print
-    msg = b'\x01'
+    msg = 'AT+MSGHEX="01'
 
     # assemble readings into 2-byte values, units are 0.1 W
     for pwr in pwr_list:
-        msg += int(pwr * 10.0 + 0.5).to_bytes(2, 'big')
-
-    msghex = hexlify(msg)
-    cmd = bytes('AT+MSGHEX="', 'utf-8') + msghex + bytes('"\n', 'utf-8')
+        msg += '%04X' % int(pwr * 10.0 + 0.5)
+    msg += '"\n'
+    cmd = bytes(msg, 'utf-8')
     uart.write(cmd)
 
 def send_reboot():
     """Send a message indicating that a reboot occurred."""
     print('reboot')     # debug print
-    msghex = hexlify(b'\x02')
-    cmd = bytes('AT+MSGHEX="', 'utf-8') + msghex + bytes('"\n', 'utf-8')
+    cmd = bytes('AT+MSGHEX="02"\n', 'utf-8')
     uart.write(cmd)
 
 def check_for_downlink(lin):
