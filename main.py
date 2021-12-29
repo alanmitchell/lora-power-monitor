@@ -1,7 +1,8 @@
-"""CircuitPython code to measure electrical power.  Voltage is sampled from an 
-AC/AC power adapter and current sampled from a CT.  Both current and voltage
-waveforms are connected to a reference voltage part way between microcontroller
-Vcc and ground.
+"""CircuitPython code to measure electrical power and transmit data via LoRaWAN.
+The radio module used is a SEEED Studio Grove E5. Voltage is sampled from an 
+Jameco 5VAC power adapter and current sampled from a CR Magnetics CR 3110-3000 CT.
+Both current and voltage waveforms are connected to a 2.048 Volt reference voltage 
+so that AC swing stays within limits of the microcontroller ADC.
 """
 from adafruit_binascii import hexlify
 import time
@@ -9,15 +10,17 @@ import board
 import busio
 from analogio import AnalogIn
 
-# Constants that control when power readings are sent via LoRaWAN
+# Constants that control when power readings are sent via LoRaWAN:
 PCT_CHG_THRESH = 0.03     # Power must change by at least this percent, expressed as 
                           #    fraction, i.e. 0.03 is 3%
 ABS_CHG_THRESH = 2.0      # Power must change by at least this many Watts
-MAX_READING_GAP = 300      # If haven't sent in this number of measurements, force a send
-MIN_READING_GAP = 7       # LoRaWAN can't accept readings too close in time. Min gap
+MAX_READING_GAP = 600     # If haven't sent in this number of measurements, force a send
+MIN_READING_GAP = 7       # LoRaWAN radio can't accept readings too close in time. Min gap
                           #    expressed in number of measurements.
 
 CYCLES_TO_MEASURE = 60       # full cycles to measure for one reading
+
+# Calibration point was 870 Watts.  PZEM meter - 0.35% was source of truth.
 CALIB_MULT = 27368.0          # multiplier to convert v * i measured into Watts
 
 # Identify the pins that have the voltage, current and reference voltage.
@@ -25,12 +28,11 @@ v_in = AnalogIn(board.A0)
 i_in = AnalogIn(board.A1)
 vref_in = AnalogIn(board.A2)
 
-# Serial port dumping debug information now but ultimately for talking the 
-# LoRaWAN transceiver module.
+# Serial port talking to LoRaWAN module, SEEED Grove E5.
 uart = busio.UART(
     board.TX, board.RX, 
     baudrate=9600, 
-    timeout=0.01,
+    timeout=0.01,                 # need some timeout for readline() to work.
     receiver_buffer_size=128,     # when downlink is received, about 90 bytes are received.
 )
 
@@ -100,7 +102,9 @@ def measure_power():
         v1 = v
 
 def send_pwr_readings(pwr_list):
-    print(pwr_list)
+    """Sends power readings in 'pwr_list' list to the LoRaWAN module.
+    """
+    print(pwr_list)     # debug print
     msg = b'\x01'
 
     # assemble readings into 2-byte values, units are 0.1 W
@@ -112,17 +116,23 @@ def send_pwr_readings(pwr_list):
     uart.write(cmd)
 
 def send_reboot():
-    print('reboot')
+    """Send a message indicating that a reboot occurred."""
+    print('reboot')     # debug print
     msghex = hexlify(b'\x02')
     cmd = bytes('AT+MSGHEX="', 'utf-8') + msghex + bytes('"\n', 'utf-8')
     uart.write(cmd)
 
 def check_for_downlink(lin):
+    """'lin' is a line received from the E5 module.  Check to see if it is
+    a Downlink message, and if so, process the request."""
     lin = str(lin)
     if 'PORT: 1; RX: "' in lin:
+        # this is a Downlink message. Pull out the Hex string data.  First two
+        # characters indicate the request type.
         data = lin.split('"')[-2]
         if data[:2] == '01':
-            # Request to change Data Rate
+            # Request to change Data Rate. Data rate is given in the 3rd & 4th 
+            # charagers.
             dr = int(data[2:4])
             cmd = bytes('AT+DR=%s\n' % dr, 'utf-8')
             uart.write(cmd)
@@ -143,17 +153,20 @@ while True:
     ix += 1
     pwr = measure_power()
     do_send = False
+    # Need to have one prior reading at least before sending.
     if pwr_prior is not None:
          
         if pwr_last_sent_value is not None:
+            # Check absolute change and percent change to see if enough change has occurred
+            # to send a reading.
             do_send = abs(pwr - pwr_last_sent_value) >= ABS_CHG_THRESH
             if pwr_last_sent_value != 0.0:
                 do_send = do_send and abs((pwr - pwr_last_sent_value) / pwr_last_sent_value) >= PCT_CHG_THRESH
         else:
-            # if nothing has been sent yet, send a reading.
+            # Nothing has been sent yet, so send a reading.
             do_send = True
 
-        # If we exceeded max measure count, send
+        # If we exceeded max measure count, send no matter what.
         if ix >= MAX_READING_GAP: do_send = True
 
         # if we haven't waited long enough since last send, don't send.
@@ -165,8 +178,10 @@ while True:
             ix = 0
 
     pwr_prior = pwr
-    print(ix)
+    print(ix)    # debug print
 
+    # Read any lines that have been sent by the E5 module.  Check to 
+    # see if they are downlinks & process if so.
     while True:
         lin = uart.readline()
         if lin is None: break
