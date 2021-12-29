@@ -18,7 +18,7 @@ MIN_READING_GAP = 7       # LoRaWAN can't accept readings too close in time. Min
                           #    expressed in number of measurements.
 
 CYCLES_TO_MEASURE = 60       # full cycles to measure for one reading
-CALIB_MULT = 27464.0          # multiplier to convert v * i measured into Watts
+CALIB_MULT = 27368.0          # multiplier to convert v * i measured into Watts
 
 # Identify the pins that have the voltage, current and reference voltage.
 v_in = AnalogIn(board.A0)
