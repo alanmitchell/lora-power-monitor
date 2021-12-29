@@ -2,7 +2,7 @@
 The radio module used is a SEEED Studio Grove E5. Voltage is sampled from an 
 Jameco 5VAC power adapter and current sampled from a CR Magnetics CR 3110-3000 CT.
 Both current and voltage waveforms are connected to a 2.048 Volt reference voltage 
-so that the 1AC swing stays within limits of the microcontroller ADC.
+so that the AC voltage swing stays within limits of the microcontroller ADC.
 """
 import time
 import board
