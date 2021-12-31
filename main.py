@@ -8,6 +8,7 @@ import time
 import board
 import busio
 from analogio import AnalogIn
+#from digitalio import DigitalInOut, Direction
 
 # Constants that control when power readings are sent via LoRaWAN:
 PCT_CHG_THRESH = 0.03     # Power must change by at least this percent, expressed as 
@@ -26,6 +27,8 @@ CALIB_MULT = 27368.0          # multiplier to convert v * i measured into Watts
 v_in = AnalogIn(board.A0)
 i_in = AnalogIn(board.A1)
 vref_in = AnalogIn(board.A2)
+#debug_out = DigitalInOut(board.A3)
+#debug_out.direction = Direction.OUTPUT
 
 # Serial port talking to LoRaWAN module, SEEED Grove E5.
 uart = busio.UART(
@@ -94,7 +97,7 @@ def measure_power():
             # voltage back to the time the current was read by weighting in prior reading.
             # v1 weighting is determined by length of time for one analog read / total time
             # for one sample including all the code.
-            cycle_tot += (v * 0.76 + v1 * 0.24) * i
+            cycle_tot += (v * 0.79 + v1 * 0.21) * i
             n += 1
         
         v2 = v1
@@ -149,6 +152,7 @@ pwr_prior = None
 while True:
     ix += 1
     pwr = measure_power()
+    #print(pwr)
     do_send = False
     # Need to have one prior reading at least before sending.
     if pwr_prior is not None:
@@ -175,7 +179,7 @@ while True:
             ix = 0
 
     pwr_prior = pwr
-    print(ix)    # debug print
+    #print(ix)    # debug print
 
     # Read any lines that have been sent by the E5 module.  Check to 
     # see if they are downlinks & process if so.
