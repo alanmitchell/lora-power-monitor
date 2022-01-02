@@ -137,6 +137,20 @@ def check_for_downlink(lin):
             cmd = bytes('AT+DR=%s\n' % dr, 'utf-8')
             uart.write(cmd)
 
+def is_change(last_sent_read, current_read):
+    """Returns True if change in readings meets significant criteria, False otherwise.
+    """
+    # If no value has been sent yet, a change has occurred.
+    if last_sent_read is None:
+        return True
+    
+    # Check absolute change and percent change to see if enough change has occurred
+    # to send a reading.
+    result = abs(current_read - last_sent_read) >= ABS_CHG_THRESH
+    if last_sent_read != 0.0:
+        result = result and abs((current_read - last_sent_read) / last_sent_read) >= PCT_CHG_THRESH
+    return result
+
 send_reboot()
 time.sleep(7.0)    # need to wait for send to continue.
 
@@ -146,40 +160,47 @@ pwr_last_sent_value = None
 # counter that track how many measurements since last power value was sent
 ix = MAX_READING_GAP      # ensures that a reading will be sent immediately
 
-# track the one-prior power reading because that is sent along with the new value
-pwr_prior = None
+# States:
+ST_FIRST = 0       # First reading after reboot
+ST_NORMAL = 1      # Normal, no change occurred, no max gap
+ST_CHANGE = 2      # Significant power change occurred
+
+state = ST_FIRST
+readings = []
 
 while True:
     ix += 1
     pwr = measure_power()
+    readings.append(pwr)
     #print(pwr)
+
     do_send = False
+    if state == ST_NORMAL and ix >= MAX_READING_GAP:
+        readings = readings[-1:]   # only send current reading
+        do_send = True
+    
     # Need to have one prior reading at least before sending.
-    if pwr_prior is not None:
-         
-        if pwr_last_sent_value is not None:
-            # Check absolute change and percent change to see if enough change has occurred
-            # to send a reading.
-            do_send = abs(pwr - pwr_last_sent_value) >= ABS_CHG_THRESH
-            if pwr_last_sent_value != 0.0:
-                do_send = do_send and abs((pwr - pwr_last_sent_value) / pwr_last_sent_value) >= PCT_CHG_THRESH
+    elif state == ST_FIRST:
+        state  = ST_NORMAL
+
+    elif state == ST_NORMAL:
+        if ix < MIN_READING_GAP:
+            readings = readings[-1:]
+        elif is_change(pwr_last_sent_value, pwr):
+            state = ST_CHANGE
         else:
-            # Nothing has been sent yet, so send a reading.
+            readings = readings[-1:]
+    
+    elif state == ST_CHANGE:
+        if len(readings) == 5:
             do_send = True
 
-        # If we exceeded max measure count, send no matter what.
-        if ix >= MAX_READING_GAP: do_send = True
-
-        # if we haven't waited long enough since last send, don't send.
-        if ix < MIN_READING_GAP: do_send = False
-
-        if do_send:
-            send_pwr_readings([pwr_prior, pwr])
-            pwr_last_sent_value = pwr
-            ix = 0
-
-    pwr_prior = pwr
-    #print(ix)    # debug print
+    if do_send:
+        send_pwr_readings(readings)
+        pwr_last_sent_value = pwr
+        readings = []
+        ix = 0
+        state = ST_NORMAL
 
     # Read any lines that have been sent by the E5 module.  Check to 
     # see if they are downlinks & process if so.
