@@ -1,3 +1,6 @@
+"""Module that performs the power measurement by reading the voltage and current
+signals and computing power.
+"""
 import board
 import busio
 from analogio import AnalogIn
