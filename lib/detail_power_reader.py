@@ -9,7 +9,9 @@ import power_measure
 PCT_CHG_THRESH = 0.03     # Power must change by at least this percent, expressed as 
                           #    fraction, i.e. 0.03 is 3%
 ABS_CHG_THRESH = 2.0      # Power must change by at least this many Watts
-MAX_READING_GAP = 600     # If haven't sent in this number of measurements, force a send
+# If haven't sent in this number of measurements, force a send.  The divisor is the number
+# of seconds per main script loop.
+MAX_READING_GAP = int(600/1.0167)     
 MIN_READING_GAP = 7       # LoRaWAN radio can't accept readings too close in time. Min gap
                           #    expressed in number of measurements.
 

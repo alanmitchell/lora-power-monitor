@@ -9,6 +9,7 @@ import board
 import busio
 
 from detail_power_reader import DetailReader
+from average_power_reader import AverageReader
 
 # Serial port talking to LoRaWAN module, SEEED Grove E5.
 e5_uart = busio.UART(
@@ -43,7 +44,8 @@ send_reboot()
 time.sleep(7.0)    # need to wait for send to continue.
 
 # reader that sends signifcant changes in power consumption
-reader = DetailReader(e5_uart)    
+#reader = DetailReader(e5_uart)    
+reader = AverageReader(e5_uart)
 
 while True:
 
