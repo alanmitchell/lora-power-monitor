@@ -30,6 +30,7 @@ class AverageReader(BaseReader):
         msg = '03'          # the type code for this message
 
         avg_power = self.reading_total / self.reads_between_xmit
+        print(avg_power)
 
         # transmit the average expressed as tenths of a Watt, as a 2-byte HEX integer
         msg += '%04X' % int(avg_power * 10.0 + 0.5)
@@ -38,7 +39,6 @@ class AverageReader(BaseReader):
         # expressed in seconds
         offset = SECS_BETWEEN_XMIT / 2.0
         msg += '%04X' % int(offset)
-        print(avg_power, msg)
 
         self.send_data(msg)     # use parent class function to 
 
