@@ -11,7 +11,7 @@ PCT_CHG_THRESH = 0.03     # Power must change by at least this percent, expresse
 ABS_CHG_THRESH = 2.0      # Power must change by at least this many Watts
 # If haven't sent in this number of measurements, force a send.  The divisor is the number
 # of seconds per main script loop.
-MAX_READING_GAP = int(600/1.0167)     
+MAX_READING_GAP_SECS = 900     
 MIN_READING_GAP = 7       # LoRaWAN radio can't accept readings too close in time. Min gap
                           #    expressed in number of measurements.
 
@@ -31,8 +31,11 @@ class DetailReader(BaseReader):
         # The last power value that was sent (Watts)
         self.pwr_last_sent_value = None
 
+        # Calculate the maximum reading gap in terms of number of readings.
+        self.max_reading_gap = int(MAX_READING_GAP_SECS / self.secs_per_loop)
+
         # counter that tracks how many measurements since last power value was sent
-        self.ix = MAX_READING_GAP      # ensures that a reading will be sent immediately
+        self.ix = self.max_reading_gap      # ensures that a reading will be sent immediately
 
         self.state = ST_FIRST
         self.readings = []
@@ -76,7 +79,7 @@ class DetailReader(BaseReader):
         self.readings.append(pwr)
 
         do_send = False
-        if self.state == ST_NORMAL and self.ix >= MAX_READING_GAP:
+        if self.state == ST_NORMAL and self.ix >= self.max_reading_gap:
             self.readings = self.readings[-1:]   # only send current reading
             do_send = True
         

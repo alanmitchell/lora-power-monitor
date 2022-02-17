@@ -11,6 +11,15 @@ import busio
 from detail_power_reader import DetailReader
 from average_power_reader import AverageReader
 
+# If DETAIL is set to True, this device will send power readings whenever a 
+# significant change occurs.  If set to False, average readings will be sent, 
+# with a period determined by the SECS_BETWEEN_XMIT constatn in the 
+# average_power_reader.py module.
+DETAIL = False
+
+# number of seconds it takes to execute the main loop once
+SECS_PER_LOOP = 1.0167
+
 # Serial port talking to LoRaWAN module, SEEED Grove E5.
 e5_uart = busio.UART(
     board.TX, board.RX, 
@@ -43,9 +52,10 @@ def check_for_downlink(lin):
 send_reboot()
 time.sleep(7.0)    # need to wait for send to continue.
 
-# reader that sends signifcant changes in power consumption
-#reader = DetailReader(e5_uart)    
-reader = AverageReader(e5_uart)
+if DETAIL:
+    reader = DetailReader(e5_uart, SECS_PER_LOOP)
+else:    
+    reader = AverageReader(e5_uart, SECS_PER_LOOP)
 
 while True:
 
