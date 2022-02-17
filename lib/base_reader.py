@@ -17,7 +17,7 @@ class BaseReader:
     def send_data(self, msg):
         """Sends the HEX string 'msg' to the E5 module with a AT+MSGHEX command.
         """
-        final_msg = f'AT+MSGHEX="{msg}\n"'
+        final_msg = 'AT+MSGHEX="' + msg + '"\n'
 
         cmd = bytes(final_msg, 'utf-8')
         self.uart.write(cmd)

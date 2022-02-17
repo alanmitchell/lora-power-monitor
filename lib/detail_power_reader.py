@@ -93,6 +93,7 @@ class DetailReader(BaseReader):
                 self.readings = self.readings[-1:]
         
         elif self.state == ST_CHANGE:
+            # once a total of 5 readings have been accumulated, send the data.
             if len(self.readings) == 5:
                 do_send = True
 
