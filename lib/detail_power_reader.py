@@ -4,14 +4,8 @@ times if no significant change has occurred.
 """
 from base_reader import BaseReader
 import power_measure
+from config import config
 
-# Constants that control when power readings are sent via LoRaWAN:
-PCT_CHG_THRESH = 0.03     # Power must change by at least this percent, expressed as 
-                          #    fraction, i.e. 0.03 is 3%
-ABS_CHG_THRESH = 2.0      # Power must change by at least this many Watts
-
-# If haven't sent in this number of measurements, force a send.
-MAX_READING_GAP_SECS = 900
 # LoRaWAN radio can't accept readings too close in time. Min gap
 # expressed in number of measurements.
 MIN_READING_GAP = 7                        
@@ -32,11 +26,8 @@ class DetailReader(BaseReader):
         # The last power value that was sent (Watts)
         self.pwr_last_sent_value = None
 
-        # Calculate the maximum reading gap in terms of number of readings.
-        self.max_reading_gap = int(MAX_READING_GAP_SECS / self.secs_per_loop)
-
         # counter that tracks how many measurements since last power value was sent
-        self.ix = self.max_reading_gap      # ensures that a reading will be sent immediately
+        self.ix = config.MAX_READING_GAP      # ensures that a reading will be sent immediately
 
         self.state = ST_FIRST
         self.readings = []
@@ -64,9 +55,9 @@ class DetailReader(BaseReader):
         
         # Check absolute change and percent change to see if enough change has occurred
         # to send a reading.
-        result = abs(current_read - last_val) >= ABS_CHG_THRESH
+        result = abs(current_read - last_val) >= config.ABS_CHG_THRESH
         if last_val != 0.0:
-            result = result and abs((current_read - last_val) / last_val) >= PCT_CHG_THRESH
+            result = result and abs((current_read - last_val) / last_val) >= config.PCT_CHG_THRESH
 
         return result
 
@@ -80,7 +71,7 @@ class DetailReader(BaseReader):
         self.readings.append(pwr)
 
         do_send = False
-        if self.state == ST_NORMAL and self.ix >= self.max_reading_gap:
+        if self.state == ST_NORMAL and self.ix >= config.MAX_READING_GAP:
             self.readings = self.readings[-1:]   # only send current reading
             do_send = True
         

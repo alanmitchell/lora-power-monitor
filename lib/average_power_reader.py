@@ -1,12 +1,8 @@
 """Reads and averages power over a fixed time interval.
 """
+from config import config
 from base_reader import BaseReader
 import power_measure
-
-# Number of seconds of readings that should occur before an average value is
-# sent.
-SECS_BETWEEN_XMIT = 900
-
 
 class AverageReader(BaseReader):
 
@@ -20,8 +16,6 @@ class AverageReader(BaseReader):
 
         # Accumulates power readings since last transmission
         self.reading_total = 0.0
-        
-        self.reads_between_xmit = int(SECS_BETWEEN_XMIT / self.secs_per_loop)
 
     def send_pwr_readings(self):
         """Sends the average power reading to the LoRaWAN module, along with the number
@@ -29,7 +23,7 @@ class AverageReader(BaseReader):
         """
         msg = '03'          # the type code for this message
 
-        avg_power = self.reading_total / self.reads_between_xmit
+        avg_power = self.reading_total / config.reads_between_xmit
         print(avg_power)
 
         # transmit the average expressed as tenths of a Watt, as a 2-byte HEX integer
@@ -37,17 +31,17 @@ class AverageReader(BaseReader):
 
         # add the timestamp offset, which should be half the measurement interval
         # expressed in seconds
-        offset = SECS_BETWEEN_XMIT / 2.0
+        offset = config.secs_between_xmit / 2.0
         msg += '%04X' % int(offset)
 
-        self.send_data(msg)     # use parent class function to 
+        self.send_data(msg)     # use parent class function to send
 
     def read(self):
 
         self.ix += 1
         self.reading_total += power_measure.measure()
 
-        if self.ix == self.reads_between_xmit:
+        if self.ix >= config.reads_between_xmit:
             self.send_pwr_readings()
             self.ix = 0
             self.reading_total = 0.0

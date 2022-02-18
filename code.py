@@ -10,15 +10,7 @@ import busio
 
 from detail_power_reader import DetailReader
 from average_power_reader import AverageReader
-
-# If DETAIL is set to True, this device will send power readings whenever a 
-# significant change occurs.  If set to False, average readings will be sent, 
-# with a period determined by the SECS_BETWEEN_XMIT constatn in the 
-# average_power_reader.py module.
-DETAIL = False
-
-# number of seconds it takes to execute the main loop once
-SECS_PER_LOOP = 1.0167
+from config import config
 
 # Serial port talking to LoRaWAN module, SEEED Grove E5.
 e5_uart = busio.UART(
@@ -44,20 +36,41 @@ def check_for_downlink(lin):
         data = lin.split('"')[-2]
         if data[:2] == '01':
             # Request to change Data Rate. Data rate is given in the 3rd & 4th 
-            # charagers.
-            dr = int(data[2:4])
-            cmd = bytes('AT+DR=%s\n' % dr, 'utf-8')
-            e5_uart.write(cmd)
+            # characters.
+            dr = int(data[2:4], 16)
+            if dr in (0, 1, 2, 3):
+                cmd = bytes('AT+DR=%s\n' % dr, 'utf-8')
+                e5_uart.write(cmd)
+
+        elif data[:2] == '02':
+            # Request to change Detail mode
+            mode = int(data[2:4], 16)
+            config.detail = mode
+
+        elif data[:2] == '03':
+            # Request to change time between transmissions, 2 byte (4 Hex characters)
+            secs = int(data[2:6], 16)
+            print('Setting time between transmits to', secs, 'seconds')
+            config.secs_between_xmit = secs
 
 send_reboot()
 time.sleep(7.0)    # need to wait for send to continue.
 
-if DETAIL:
-    reader = DetailReader(e5_uart, SECS_PER_LOOP)
-else:    
-    reader = AverageReader(e5_uart, SECS_PER_LOOP)
+# The object that reads the power and transmits readings.  Initially None but
+# determined in the main loop
+reader = None
 
 while True:
+
+    # Make sure correct reader is being used
+    if config.detail:
+        if type(reader) is not DetailReader:
+            reader = DetailReader(e5_uart)
+            print('made detail')
+    else:
+        if type(reader) is not AverageReader:
+            reader = AverageReader(e5_uart)
+            print('made average')
 
     # Read sensor and potentially send data
     reader.read()
