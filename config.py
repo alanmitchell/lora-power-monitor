@@ -10,6 +10,9 @@ ADDR_SECS_BETWEEN_XMIT = 1     # Index of 2-byte integer of # of seconds between
 
 class Configuration:
 
+    # If set to True, power readings are printed, usually for calibration purposes
+    PRINT_POWER = False
+
     # If no downlink has been made to change which reader is being used (Detailed
     # of Averaging), this is the default setting.
     # If DETAIL is set to True, this device will send power readings whenever a 
@@ -20,12 +23,19 @@ class Configuration:
 
     # Number of seconds per main loop (affected by speed of micro-controller)
     SECS_PER_LOOP = 1.0167
+
+    # The constant to convert measured V x I into watts
+    # Calibration point was 870 Watts.  PZEM meter - 0.35% was source of truth.
+    CALIB_MULT = 27368.0          # multiplier to convert v * i measured into Watts
+
+    # full AC cycles to measure for one power reading
+    CYCLES_TO_MEASURE = 60       
     
     # --- Settings related to the Detail Power Reader
     # Constants that control when power readings are sent via LoRaWAN:
     PCT_CHG_THRESH = 0.03     # Power must change by at least this percent, expressed as 
                               #    fraction, i.e. 0.03 is 3%
-    ABS_CHG_THRESH = 2.0      # Power must change by at least this many Watts
+    ABS_CHG_THRESH = 7.0      # Power must change by at least this many Watts
 
     # If haven't sent in this number of measurements, force a send.
     MAX_READING_GAP_SECS = 900
@@ -34,7 +44,7 @@ class Configuration:
     # --- Settings related to Average Power Reader
     # If not changed by a downlink, this is the default number seconds between
     # transmission of an average power value.
-    SECS_BETWEEN_XMIT_DEFAULT = 900
+    SECS_BETWEEN_XMIT_DEFAULT = 600
 
     def __init__(self):
         # for the few settings that are changeable via downlink, check non-volatile 

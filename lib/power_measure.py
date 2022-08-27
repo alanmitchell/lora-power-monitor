@@ -5,10 +5,10 @@ import board
 import busio
 from analogio import AnalogIn
 
-CYCLES_TO_MEASURE = 60       # full cycles to measure for one reading
-
-# Calibration point was 870 Watts.  PZEM meter - 0.35% was source of truth.
-CALIB_MULT = 27368.0          # multiplier to convert v * i measured into Watts
+# get the configuration object from the directory above
+import sys
+sys.path.insert(0, '../')
+from config import config
 
 # Identify the pins that have the voltage, current and reference voltage.
 v_in = AnalogIn(board.A0)
@@ -53,19 +53,22 @@ def measure():
                 cycle_tot /= n
                 pwr_avg += cycle_tot
                 # if large enough power, determine whether inverted
-                if abs(cycle_tot * CALIB_MULT) > 6.0:
+                if abs(cycle_tot * config.CALIB_MULT) > 6.0:
                     invert = (cycle_tot < 0)
                 cycle_tot = 0.0
                 n = 0
 
-            if cycle_starts > CYCLES_TO_MEASURE:
-                pwr_avg /= CYCLES_TO_MEASURE
-                pwr_avg *= CALIB_MULT
+            if cycle_starts > config.CYCLES_TO_MEASURE:
+                pwr_avg /= config.CYCLES_TO_MEASURE
+                pwr_avg *= config.CALIB_MULT
                 if invert:
                     pwr_avg = -pwr_avg
                 # don't return negative values
                 if pwr_avg < 0.0:
                     pwr_avg = 0
+
+                if config.PRINT_POWER:
+                    print(pwr_avg)
 
                 return pwr_avg
         
