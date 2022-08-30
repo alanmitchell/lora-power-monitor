@@ -14,8 +14,6 @@ if [ -f /mnt/chromeos/removable/CIRCUITPY/code.py ]; then
 fi
 sleep 1
 
-cp code.py /mnt/chromeos/removable/CIRCUITPY/code.py
-cp config.py /mnt/chromeos/removable/CIRCUITPY/config.py
-cp lib/*.py /mnt/chromeos/removable/CIRCUITPY/lib/
-
-
+cp src_qtpy/code.py /mnt/chromeos/removable/CIRCUITPY/code.py
+cp src_qtpy/config.py /mnt/chromeos/removable/CIRCUITPY/config.py
+cp src_qtpy/lib/*.py /mnt/chromeos/removable/CIRCUITPY/lib/
