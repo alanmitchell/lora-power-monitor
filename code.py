@@ -53,6 +53,8 @@ def check_for_downlink(lin):
             print('Setting time between transmits to', secs, 'seconds')
             config.secs_between_xmit = secs
 
+# wait for join before sendind reboot; join only occurs during power up.
+time.sleep(8.0)
 send_reboot()
 time.sleep(7.0)    # need to wait for send to continue.
 
