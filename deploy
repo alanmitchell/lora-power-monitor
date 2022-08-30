@@ -1,0 +1,21 @@
+#!/bin/bash
+
+# continue script even if error occurs
+set +e
+
+# copy the default calibrate file if it does not exist on the board
+if ! [ -f /mnt/chromeos/removable/CIRCUITPY/calibrate.txt ]; then
+    cp calibrate_default.txt /mnt/chromeos/removable/CIRCUITPY/calibrate.txt
+fi
+
+# found that it was more reliable to delete first then copy
+if [ -f /mnt/chromeos/removable/CIRCUITPY/code.py ]; then
+    rm /mnt/chromeos/removable/CIRCUITPY/code.py
+fi
+sleep 1
+
+cp code.py /mnt/chromeos/removable/CIRCUITPY/code.py
+cp config.py /mnt/chromeos/removable/CIRCUITPY/config.py
+cp lib/*.py /mnt/chromeos/removable/CIRCUITPY/lib/
+
+
