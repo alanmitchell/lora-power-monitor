@@ -25,8 +25,9 @@ class Configuration:
     SECS_PER_LOOP = 1.0167
 
     # The constant to convert measured V x I into watts
-    # Calibration point was 870 Watts.  PZEM meter - 0.35% was source of truth.
-    CALIB_MULT = 27368.0          # multiplier to convert v * i measured into Watts
+    # This constant is read from the 'calibrate.txt' file located in the root of the 
+    # CircuitPython drive.
+    CALIB_MULT = float(open('calibrate.txt').read())          # multiplier to convert v * i measured into Watts
 
     # full AC cycles to measure for one power reading
     CYCLES_TO_MEASURE = 60       
