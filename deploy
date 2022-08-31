@@ -8,12 +8,15 @@ if ! [ -f /mnt/chromeos/removable/CIRCUITPY/calibrate.txt ]; then
     cp calibrate_default.txt /mnt/chromeos/removable/CIRCUITPY/calibrate.txt
 fi
 
-# found that it was more reliable to delete first then copy
+# found that it was more reliable to delete the code.py file first before
+# copying a new one.
 if [ -f /mnt/chromeos/removable/CIRCUITPY/code.py ]; then
     rm /mnt/chromeos/removable/CIRCUITPY/code.py
 fi
 sleep 1
 
-cp src_qtpy/code.py /mnt/chromeos/removable/CIRCUITPY/code.py
+# copy the code.py file last so that all other files are in place before starting the
+# main script (code.py)
 cp src_qtpy/config.py /mnt/chromeos/removable/CIRCUITPY/config.py
 cp src_qtpy/lib/*.py /mnt/chromeos/removable/CIRCUITPY/lib/
+cp src_qtpy/code.py /mnt/chromeos/removable/CIRCUITPY/code.py
