@@ -29,7 +29,6 @@ def send_reboot():
 def check_for_downlink(lin):
     """'lin' is a line received from the E5 module.  Check to see if it is
     a Downlink message, and if so, process the request."""
-    lin = str(lin)
     if 'PORT: 1; RX: "' in lin:
         # this is a Downlink message. Pull out the Hex string data.  First two
         # characters indicate the request type.
@@ -43,7 +42,7 @@ def check_for_downlink(lin):
                 e5_uart.write(cmd)
 
         elif data[:2] == '02':
-            # Request to change Detail mode
+            # Request to change Detail mode: 1 is Detail mode, 0 is Average mode
             mode = int(data[2:4], 16)
             config.detail = mode
 
@@ -57,6 +56,10 @@ def check_for_downlink(lin):
 time.sleep(8.0)
 send_reboot()
 time.sleep(7.0)    # need to wait for send to continue.
+
+# Send command to get ID info sent back from the E5
+cmd = bytes('AT+ID\n', 'utf-8')
+e5_uart.write(cmd)
 
 # The object that reads the power and transmits readings.  Initially None but
 # determined in the main loop
@@ -82,5 +85,6 @@ while True:
     while True:
         lin = e5_uart.readline()
         if lin is None: break
-        print(lin)
-        check_for_downlink(lin)
+        lin_str = str(lin, 'ascii').strip()
+        print(lin_str)
+        check_for_downlink(lin_str)
