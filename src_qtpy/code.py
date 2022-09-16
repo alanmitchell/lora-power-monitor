@@ -67,24 +67,31 @@ reader = None
 
 while True:
 
-    # Make sure correct reader is being used
-    if config.detail:
-        if type(reader) is not DetailReader:
-            reader = DetailReader(e5_uart)
-            print('made detail')
-    else:
-        if type(reader) is not AverageReader:
-            reader = AverageReader(e5_uart)
-            print('made average')
+    try:
+        # Make sure correct reader is being used
+        if config.detail:
+            if type(reader) is not DetailReader:
+                reader = DetailReader(e5_uart)
+                print('made detail')
+        else:
+            if type(reader) is not AverageReader:
+                reader = AverageReader(e5_uart)
+                print('made average')
 
-    # Read sensor and potentially send data
-    reader.read()
+        # Read sensor and potentially send data
+        reader.read()
 
-    # Read any lines that have been sent by the E5 module.  Check to 
-    # see if they are downlinks & process if so.
-    while True:
-        lin = e5_uart.readline()
-        if lin is None: break
-        lin_str = str(lin, 'ascii').strip()
-        print(lin_str)
-        check_for_downlink(lin_str)
+        # Read any lines that have been sent by the E5 module.  Check to 
+        # see if they are downlinks & process if so.
+        while True:
+            lin = e5_uart.readline()
+            if lin is None: break
+            try:
+                lin_str = str(lin, 'ascii').strip()
+                print(lin_str)
+                check_for_downlink(lin_str)
+            except:
+                print('Bad character in line:', lin)
+    
+    except:
+        print('Unknown error.')
