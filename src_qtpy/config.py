@@ -10,9 +10,6 @@ ADDR_SECS_BETWEEN_XMIT = 1     # Index of 2-byte integer of # of seconds between
 
 class Configuration:
 
-    # If set to True, power readings are printed, usually for calibration purposes
-    PRINT_POWER = False
-
     # If no downlink has been made to change which reader is being used (Detailed
     # of Averaging), this is the default setting.
     # If DETAIL is set to True, this device will send power readings whenever a 
@@ -23,11 +20,6 @@ class Configuration:
 
     # Number of seconds per main loop (affected by speed of micro-controller)
     SECS_PER_LOOP = 1.0167
-
-    # The constant to convert measured V x I into watts
-    # This constant is read from the 'calibrate.txt' file located in the root of the 
-    # CircuitPython drive.
-    CALIB_MULT = float(open('calibrate.txt').read())          # multiplier to convert v * i measured into Watts
 
     # full AC cycles to measure for one power reading
     CYCLES_TO_MEASURE = 60       

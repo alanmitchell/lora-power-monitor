@@ -9,6 +9,7 @@ from analogio import AnalogIn
 import sys
 sys.path.insert(0, '../')
 from config import config
+import calibrate
 
 # Identify the pins that have the voltage, current and reference voltage.
 v_in = AnalogIn(board.A0)
@@ -53,21 +54,21 @@ def measure():
                 cycle_tot /= n
                 pwr_avg += cycle_tot
                 # if large enough power, determine whether inverted
-                if abs(cycle_tot * config.CALIB_MULT) > 6.0:
+                if abs(cycle_tot * calibrate.CALIB_MULT) > 6.0:
                     invert = (cycle_tot < 0)
                 cycle_tot = 0.0
                 n = 0
 
             if cycle_starts > config.CYCLES_TO_MEASURE:
                 pwr_avg /= config.CYCLES_TO_MEASURE
-                pwr_avg *= config.CALIB_MULT
+                pwr_avg *= calibrate.CALIB_MULT
                 if invert:
                     pwr_avg = -pwr_avg
                 # don't return negative values
                 if pwr_avg < 0.0:
                     pwr_avg = 0
 
-                if config.PRINT_POWER:
+                if calibrate.DEBUG:
                     print(pwr_avg)
 
                 return pwr_avg

@@ -4,8 +4,8 @@
 set +e
 
 # copy the default calibrate file if it does not exist on the board
-if ! [ -f /mnt/chromeos/removable/CIRCUITPY/calibrate.txt ]; then
-    cp calibrate_default.txt /mnt/chromeos/removable/CIRCUITPY/calibrate.txt
+if ! [ -f /mnt/chromeos/removable/CIRCUITPY/calibrate.py ]; then
+    cp calibrate_default.py /mnt/chromeos/removable/CIRCUITPY/calibrate.py
 fi
 
 # found that it was more reliable to delete the code.py file first before
