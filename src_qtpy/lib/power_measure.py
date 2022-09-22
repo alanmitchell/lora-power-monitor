@@ -74,11 +74,11 @@ def measure():
                 return pwr_avg
         
         if cycle_starts > 0:
-            # because of delay in reading voltage relative to current, interpolate the 
-            # voltage back to the time the current was read by weighting in prior reading.
-            # v1 weighting is determined by length of time for one analog read / total time
-            # for one sample including all the code.
-            cycle_tot += (v * 0.79 + v1 * 0.21) * i
+            # Use a somewhat earlier voltage reading to compensate for reading the voltage after the current,
+            # and to compensate for phase shifts in the CT and sampling Transformer.  This weighting was 
+            # determined by analyzing capacitive and inductive + resistive loads and matching power values
+            # as read by the PZEM meter.
+            cycle_tot += (v * 0.55 + v1 * 0.45) * i
             n += 1
         
         v2 = v1
