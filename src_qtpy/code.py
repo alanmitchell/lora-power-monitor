@@ -7,6 +7,7 @@ so that the AC voltage swing stays within limits of the microcontroller ADC.
 import time
 import board
 import busio
+import sys
 
 from detail_power_reader import DetailReader
 from average_power_reader import AverageReader
@@ -92,6 +93,9 @@ while True:
                 check_for_downlink(lin_str)
             except:
                 print('Bad character in line:', lin)
+
+    except KeyboardInterrupt:
+        sys.exit()
     
     except:
         print('Unknown error.')
