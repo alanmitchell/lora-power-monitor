@@ -19,7 +19,7 @@ class Configuration:
     DETAIL_DEFAULT = False
 
     # Number of seconds per main loop (affected by speed of micro-controller)
-    SECS_PER_LOOP = 1.0167
+    SECS_PER_LOOP = 1.0182
 
     # full AC cycles to measure for one power reading
     CYCLES_TO_MEASURE = 60       

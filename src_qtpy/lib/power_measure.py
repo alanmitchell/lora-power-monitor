@@ -68,8 +68,7 @@ def measure():
                 if pwr_avg < 0.0:
                     pwr_avg = 0
 
-                if calibrate.DEBUG:
-                    print(pwr_avg)
+                print('val', pwr_avg, calibrate.CALIB_MULT)
 
                 return pwr_avg
         
