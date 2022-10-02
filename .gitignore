@@ -1,5 +1,7 @@
 settings.json
 keys.csv
+*.mpy
+mpy-cross
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

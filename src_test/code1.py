@@ -1,5 +1,4 @@
 import board
-import busio
 from analogio import AnalogIn
 from digitalio import DigitalInOut, Direction
 

@@ -3,6 +3,14 @@
 # continue script even if error occurs
 set +e
 
+# make mpy files
+./mpy-cross src_qtpy/lib/power_measure.py
+./mpy-cross src_qtpy/lib/detail_power_reader.py
+./mpy-cross src_qtpy/lib/base_reader.py
+./mpy-cross src_qtpy/lib/average_power_reader.py
+./mpy-cross src_qtpy/lib/lora.py
+./mpy-cross src_qtpy/lib/config.py
+
 # copy the default calibrate file if it does not exist on the board
 if ! [ -f /mnt/chromeos/removable/CIRCUITPY/calibrate.py ]; then
     cp calibrate_default.py /mnt/chromeos/removable/CIRCUITPY/calibrate.py
@@ -17,6 +25,5 @@ sleep 1
 
 # copy the code.py file last so that all other files are in place before starting the
 # main script (code.py)
-cp src_qtpy/config.py /mnt/chromeos/removable/CIRCUITPY/config.py
-cp src_qtpy/lib/*.py /mnt/chromeos/removable/CIRCUITPY/lib/
+cp src_qtpy/lib/*.mpy /mnt/chromeos/removable/CIRCUITPY/lib/
 cp src_qtpy/code.py /mnt/chromeos/removable/CIRCUITPY/code.py

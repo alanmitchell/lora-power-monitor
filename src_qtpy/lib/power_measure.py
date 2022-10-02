@@ -2,21 +2,37 @@
 signals and computing power.
 """
 import board
-import busio
 from analogio import AnalogIn
+from digitalio import DigitalInOut, Direction
+import gc
+
+from config import config
 
 # get the configuration object from the directory above
 import sys
 sys.path.insert(0, '../')
-from config import config
 import calibrate
+
+# Weighting to put on current voltage reading relative to prior for
+# calculating power.  Adjusts for phase shifts between current and voltage
+# sensing.
+CUR_V_WT = 0.9
+
+# Samples to take. Will run out of memory if too many. It takes 106 - 109
+# to cover one 60 Hz cycle.
+SAMPLES = 110 * 9
 
 # Identify the pins that have the voltage, current and reference voltage.
 v_in = AnalogIn(board.A0)
 i_in = AnalogIn(board.A1)
 vref_in = AnalogIn(board.A2)
 
-def measure():
+debug_out = DigitalInOut(board.SDA)
+debug_out.direction = Direction.OUTPUT
+debug_out.value = False
+
+
+def measure_once():
     """Returns average power measured across CYCLES_TO_MEASURE full AC
     cycles.
     In order to not exceed resolution of single-precision float variable,
@@ -30,55 +46,56 @@ def measure():
         vref += vref_in.value
     vref /= n_ref
 
-    v1 = 0.0           # prior voltage reading
-    v2 = 0.0           # two prior voltage reading
-    pwr_avg = 0.0
-    cycle_tot = 0.0
-    n = 0
-    cycle_starts = 0
+    # collect all the samples.  106 - 109 samples covers a full cycle
+    n = SAMPLES
+    v_arr = [0] * n
+    i_arr = [0] * n
 
-    invert = False      # negate reading if True.
-    while True:
-        i = i_in.value
-        v = v_in.value
-        v = (v - vref) / vref
-        i = (i - vref) / vref
+    debug_out.value = True
+    for i in range(n):
+        v_arr[i] = v_in.value          # I'm reading v_in first, so already accounting for some of the lead
+        i_arr[i] = i_in.value
+    debug_out.value = False
 
-        if v1 < 0.0 and v2 < 0.0 and v >= 0.0:
-            # a new cycle has started with this reading
-            cycle_starts += 1
+    # find first and last positive-slope zero-crossing so we calculate power across a set of 
+    # complete cycles.
+    ix_start = 1          # default if no zero crossing is found
+    for i in range(1, n):
+        if v_arr[i] >= vref and v_arr[i-1] < vref:
+            ix_start = i
+            break
+    
+    ix_end = n - 1
+    for i in range(1, n):
+        if v_arr[-i] >= vref and v_arr[-i-1] < vref:
+            ix_end = n - i - 1
+            break
 
-            if cycle_starts > 1:
-                # calculate average power from last cycle and add to running total
-                # for all cycles.  reset cycle counters.
-                cycle_tot /= n
-                pwr_avg += cycle_tot
-                # if large enough power, determine whether inverted
-                if abs(cycle_tot * calibrate.CALIB_MULT) > 6.0:
-                    invert = (cycle_tot < 0)
-                cycle_tot = 0.0
-                n = 0
+    # calculate power
+    pwr = 0.0
+    for i in range(ix_start, ix_end + 1):
+        v_wtd = v_arr[i] * CUR_V_WT + v_arr[i-1] * (1.0 - CUR_V_WT)
+        pwr += (v_wtd - vref) / vref * (i_arr[i] - vref) / vref
+    pwr = pwr * calibrate.CALIB_MULT / (ix_end - ix_start + 1)
 
-            if cycle_starts > config.CYCLES_TO_MEASURE:
-                pwr_avg /= config.CYCLES_TO_MEASURE
-                pwr_avg *= calibrate.CALIB_MULT
-                if invert:
-                    pwr_avg = -pwr_avg
-                # don't return negative values
-                if pwr_avg < 0.0:
-                    pwr_avg = 0
+    if pwr < -2.0:
+        return -pwr
+    elif pwr < 0.0:
+        return 0.0
+    else:
+        return pwr
 
-                print('val', pwr_avg, calibrate.CALIB_MULT)
+def measure():
+    pwr = 0.0
+    ct = 3
+    for i in range(ct):
+        gc.collect()
+        pre_free = gc.mem_free()
+        pwr += measure_once()
+        post_free = gc.mem_free()
+        gc.collect()
+        print('free:', pre_free, post_free)
+    pwr /= ct
+    print(pwr)
 
-                return pwr_avg
-        
-        if cycle_starts > 0:
-            # Use a somewhat earlier voltage reading to compensate for reading the voltage after the current,
-            # and to compensate for phase shifts in the CT and sampling Transformer.  This weighting was 
-            # determined by analyzing capacitive and inductive + resistive loads and matching power values
-            # as read by the PZEM meter.
-            cycle_tot += (v * 0.55 + v1 * 0.45) * i
-            n += 1
-        
-        v2 = v1
-        v1 = v
+    return pwr

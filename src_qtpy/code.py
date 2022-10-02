@@ -8,10 +8,16 @@ import time
 import board
 import busio
 import sys
+import gc
 
 from detail_power_reader import DetailReader
 from average_power_reader import AverageReader
+import lora
 from config import config
+
+# disable garbage collector but manually collect prior to and after
+# power measurement.
+gc.disable()
 
 # Serial port talking to LoRaWAN module, SEEED Grove E5.
 e5_uart = busio.UART(
@@ -21,41 +27,9 @@ e5_uart = busio.UART(
     receiver_buffer_size=128,     # when downlink is received, about 90 bytes are received.
 )
 
-def send_reboot():
-    """Send a message indicating that a reboot occurred."""
-    print('reboot')     # debug print
-    cmd = bytes('AT+MSGHEX="02"\n', 'utf-8')
-    e5_uart.write(cmd)
-
-def check_for_downlink(lin):
-    """'lin' is a line received from the E5 module.  Check to see if it is
-    a Downlink message, and if so, process the request."""
-    if 'PORT: 1; RX: "' in lin:
-        # this is a Downlink message. Pull out the Hex string data.  First two
-        # characters indicate the request type.
-        data = lin.split('"')[-2]
-        if data[:2] == '01':
-            # Request to change Data Rate. Data rate is given in the 3rd & 4th 
-            # characters.
-            dr = int(data[2:4], 16)
-            if dr in (0, 1, 2, 3):
-                cmd = bytes('AT+DR=%s\n' % dr, 'utf-8')
-                e5_uart.write(cmd)
-
-        elif data[:2] == '02':
-            # Request to change Detail mode: 1 is Detail mode, 0 is Average mode
-            mode = int(data[2:4], 16)
-            config.detail = mode
-
-        elif data[:2] == '03':
-            # Request to change time between transmissions, 2 byte (4 Hex characters)
-            secs = int(data[2:6], 16)
-            print('Setting time between transmits to', secs, 'seconds')
-            config.secs_between_xmit = secs
-
-# wait for join before sendind reboot; join only occurs during power up.
+# wait for join before sending reboot; join only occurs during power up.
 time.sleep(8.0)
-send_reboot()
+lora.send_reboot(e5_uart)
 time.sleep(7.0)    # need to wait for send to continue.
 
 # Send command to get ID info sent back from the E5
@@ -90,12 +64,12 @@ while True:
             try:
                 lin_str = str(lin, 'ascii').strip()
                 print(lin_str)
-                check_for_downlink(lin_str)
+                lora.check_for_downlink(lin_str, e5_uart)
             except:
                 print('Bad character in line:', lin)
 
     except KeyboardInterrupt:
         sys.exit()
     
-    except:
-        print('Unknown error.')
+    #except:
+    #    print('Unknown error.')
