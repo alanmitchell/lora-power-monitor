@@ -3,7 +3,7 @@ signals and computing power.
 """
 import board
 from analogio import AnalogIn
-from digitalio import DigitalInOut, Direction
+#from digitalio import DigitalInOut, Direction
 import gc
 
 from config import config
@@ -16,20 +16,20 @@ import calibrate
 # Weighting to put on current voltage reading relative to prior for
 # calculating power.  Adjusts for phase shifts between current and voltage
 # sensing.
-CUR_V_WT = 0.9
+CUR_V_WT = 0.97
 
 # Samples to take. Will run out of memory if too many. It takes 106 - 109
 # to cover one 60 Hz cycle.
-SAMPLES = 110 * 9
+SAMPLES = 110 * 8
 
 # Identify the pins that have the voltage, current and reference voltage.
 v_in = AnalogIn(board.A0)
 i_in = AnalogIn(board.A1)
 vref_in = AnalogIn(board.A2)
 
-debug_out = DigitalInOut(board.SDA)
-debug_out.direction = Direction.OUTPUT
-debug_out.value = False
+#debug_out = DigitalInOut(board.SDA)
+#debug_out.direction = Direction.OUTPUT
+#debug_out.value = False
 
 
 def measure_once():
@@ -51,11 +51,11 @@ def measure_once():
     v_arr = [0] * n
     i_arr = [0] * n
 
-    debug_out.value = True
+    #debug_out.value = True
     for i in range(n):
         v_arr[i] = v_in.value          # I'm reading v_in first, so already accounting for some of the lead
         i_arr[i] = i_in.value
-    debug_out.value = False
+    #debug_out.value = False
 
     # find first and last positive-slope zero-crossing so we calculate power across a set of 
     # complete cycles.
@@ -78,24 +78,25 @@ def measure_once():
         pwr += (v_wtd - vref) / vref * (i_arr[i] - vref) / vref
     pwr = pwr * calibrate.CALIB_MULT / (ix_end - ix_start + 1)
 
-    if pwr < -2.0:
-        return -pwr
-    elif pwr < 0.0:
-        return 0.0
-    else:
-        return pwr
+    return pwr
 
 def measure():
     pwr = 0.0
     ct = 3
     for i in range(ct):
         gc.collect()
-        pre_free = gc.mem_free()
         pwr += measure_once()
-        post_free = gc.mem_free()
+        #print(gc.mem_free())
         gc.collect()
-        print('free:', pre_free, post_free)
     pwr /= ct
-    print(pwr)
+
+    if pwr < -1.0:
+        # CT is reversed
+        pwr = -pwr
+    elif pwr < 0.0:
+        # noise made it less than 0
+        pwr = 0.0
+
+    print('val', pwr, calibrate.CALIB_MULT)
 
     return pwr

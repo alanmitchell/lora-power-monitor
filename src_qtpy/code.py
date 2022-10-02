@@ -8,16 +8,11 @@ import time
 import board
 import busio
 import sys
-import gc
 
 from detail_power_reader import DetailReader
 from average_power_reader import AverageReader
 import lora
 from config import config
-
-# disable garbage collector but manually collect prior to and after
-# power measurement.
-gc.disable()
 
 # Serial port talking to LoRaWAN module, SEEED Grove E5.
 e5_uart = busio.UART(
@@ -71,5 +66,6 @@ while True:
     except KeyboardInterrupt:
         sys.exit()
     
-    #except:
-    #    print('Unknown error.')
+    except:
+        print('Unknown error.')
+        time.sleep(1)

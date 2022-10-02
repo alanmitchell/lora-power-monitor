@@ -4,12 +4,7 @@
 set +e
 
 # make mpy files
-./mpy-cross src_qtpy/lib/power_measure.py
-./mpy-cross src_qtpy/lib/detail_power_reader.py
-./mpy-cross src_qtpy/lib/base_reader.py
-./mpy-cross src_qtpy/lib/average_power_reader.py
-./mpy-cross src_qtpy/lib/lora.py
-./mpy-cross src_qtpy/lib/config.py
+for FILE in src_qtpy/lib/*.py; do ./mpy-cross $FILE; done; 
 
 # copy the default calibrate file if it does not exist on the board
 if ! [ -f /mnt/chromeos/removable/CIRCUITPY/calibrate.py ]; then
