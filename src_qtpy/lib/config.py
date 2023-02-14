@@ -19,8 +19,8 @@ class Configuration:
     DETAIL_DEFAULT = False
 
     # Number of seconds per main loop (affected by speed of micro-controller and number 
-    # of SAMPLES).
-    SECS_PER_LOOP = 0.9374
+    # of SAMPLES).  Run the src_test/time_loop.py program to determine this value.
+    SECS_PER_LOOP = 0.940
     
     # --- Settings related to the Detail Power Reader
     # Constants that control when power readings are sent via LoRaWAN:
