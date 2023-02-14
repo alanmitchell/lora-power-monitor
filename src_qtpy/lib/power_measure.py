@@ -18,9 +18,9 @@ import calibrate
 # sensing.
 CUR_V_WT = 0.97
 
-# Samples to take. Will run out of memory if too many. It takes 106 - 109
-# to cover one 60 Hz cycle.
-SAMPLES = 110 * 7
+# Samples to take. Will run out of memory if too many. It takes about 104
+# to cover one 60 Hz cycle.  Played with this to minimize unused samples.
+SAMPLES = int(105 * 7)
 
 # Identify the pins that have the voltage, current and reference voltage.
 v_in = AnalogIn(board.A0)
@@ -46,7 +46,7 @@ def measure_once():
         vref += vref_in.value
     vref /= n_ref
 
-    # collect all the samples.  106 - 109 samples covers a full cycle
+    # collect all the samples.
     n = SAMPLES
     v_arr = [0] * n
     i_arr = [0] * n
