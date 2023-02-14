@@ -18,8 +18,9 @@ class Configuration:
     # average_power_reader.py module.
     DETAIL_DEFAULT = False
 
-    # Number of seconds per main loop (affected by speed of micro-controller)
-    SECS_PER_LOOP = 1.092
+    # Number of seconds per main loop (affected by speed of micro-controller and number 
+    # of SAMPLES).
+    SECS_PER_LOOP = 0.9374
     
     # --- Settings related to the Detail Power Reader
     # Constants that control when power readings are sent via LoRaWAN:

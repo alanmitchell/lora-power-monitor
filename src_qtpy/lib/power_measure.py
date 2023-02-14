@@ -20,7 +20,7 @@ CUR_V_WT = 0.97
 
 # Samples to take. Will run out of memory if too many. It takes 106 - 109
 # to cover one 60 Hz cycle.
-SAMPLES = 110 * 8
+SAMPLES = 110 * 7
 
 # Identify the pins that have the voltage, current and reference voltage.
 v_in = AnalogIn(board.A0)
@@ -33,8 +33,8 @@ vref_in = AnalogIn(board.A2)
 
 
 def measure_once():
-    """Returns average power measured across CYCLES_TO_MEASURE full AC
-    cycles.
+    """Returns average power measured across a number of full AC
+    cycles.  Total cycles measured is related to the SAMPLES constant above.
     In order to not exceed resolution of single-precision float variable,
     calculate average power for each cycle, and then average the cycle values.
     """
