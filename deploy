@@ -1,4 +1,7 @@
 #!/bin/bash
+# Need to have Circuit Python mpy cross compiler in base project directory,
+# executable and named mpy-cross.
+# Download from: https://adafruit-circuit-python.s3.amazonaws.com/index.html?prefix=bin/mpy-cross/
 
 # continue script even if error occurs
 set +e
@@ -7,18 +10,18 @@ set +e
 for FILE in src_qtpy/lib/*.py; do ./mpy-cross $FILE; done; 
 
 # copy the default calibrate file if it does not exist on the board
-if ! [ -f /mnt/chromeos/removable/CIRCUITPY/calibrate.py ]; then
-    cp calibrate_default.py /mnt/chromeos/removable/CIRCUITPY/calibrate.py
+if ! [ -f /media/alan/CIRCUITPY/calibrate.py ]; then
+    cp calibrate_default.py /media/alan/CIRCUITPY/calibrate.py
 fi
 
 # found that it was more reliable to delete the code.py file first before
 # copying a new one.
-if [ -f /mnt/chromeos/removable/CIRCUITPY/code.py ]; then
-    rm /mnt/chromeos/removable/CIRCUITPY/code.py
+if [ -f /media/alan/CIRCUITPY/code.py ]; then
+    rm /media/alan/CIRCUITPY/code.py
 fi
 sleep 1
 
 # copy the code.py file last so that all other files are in place before starting the
 # main script (code.py)
-cp src_qtpy/lib/*.mpy /mnt/chromeos/removable/CIRCUITPY/lib/
-cp src_qtpy/code.py /mnt/chromeos/removable/CIRCUITPY/code.py
+cp src_qtpy/lib/*.mpy /media/alan/CIRCUITPY/lib/
+cp src_qtpy/code.py /media/alan/CIRCUITPY/code.py
