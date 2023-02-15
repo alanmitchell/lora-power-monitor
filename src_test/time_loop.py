@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 # Determine average time to do a power measurement.  Needed for the 
-# config.py file in the main application.
+# SECS_PER_LOOP setting in the config.py file in the main application.
 from serial import Serial
 from time import time
 
