@@ -61,3 +61,5 @@ finally:
     # Save the IDs and App Key for this device.
     with open(FN_KEYS, 'a') as fkeys:
         fkeys.write(f'{dev_eui}, {APP_EUI}, {app_key}\n')
+
+    print(f'\nDev EUI: {dev_eui}')

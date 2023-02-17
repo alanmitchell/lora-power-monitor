@@ -7,7 +7,7 @@
 set +e
 
 # make mpy files
-for FILE in src_qtpy/lib/*.py; do ./mpy-cross $FILE; done; 
+for FILE in src_qtpy/lib/*.py; do ./mpy-cross-7.3.3 $FILE; done; 
 
 # copy the default calibrate file if it does not exist on the board
 if ! [ -f /media/alan/CIRCUITPY/calibrate.py ]; then

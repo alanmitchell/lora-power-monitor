@@ -5,7 +5,7 @@ PORT_VOLT = '/dev/ttyUSB0'
 PORT_PWR = '/dev/ttyACM0'
 
 # Total number of readings to take for calibration
-TOTAL_READS = 15
+TOTAL_READS = 20
 
 # Calibration multiplier to convert read voltage into actual voltage
 VOLT_CALIB_MULT = 1.00       
