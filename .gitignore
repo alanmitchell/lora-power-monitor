@@ -1,5 +1,5 @@
 settings.json
-keys.csv
+keys*.csv
 *.mpy
 mpy-cross
 
