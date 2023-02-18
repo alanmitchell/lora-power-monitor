@@ -7,7 +7,7 @@
 set +e
 
 # make mpy files
-for FILE in src_qtpy/lib/*.py; do ./mpy-cross-7.3.3 $FILE; done; 
+for FILE in lib/*.py; do ./mpy-cross-7.3.3 $FILE; done; 
 
 # copy the default calibrate file if it does not exist on the board
 if ! [ -f /media/alan/CIRCUITPY/calibrate.py ]; then
@@ -23,5 +23,5 @@ sleep 1
 
 # copy the code.py file last so that all other files are in place before starting the
 # main script (code.py)
-cp src_qtpy/lib/*.mpy /media/alan/CIRCUITPY/lib/
-cp src_qtpy/code.py /media/alan/CIRCUITPY/code.py
+cp lib/*.mpy /media/alan/CIRCUITPY/lib/
+cp code.py /media/alan/CIRCUITPY/code.py
