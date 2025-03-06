@@ -1,9 +1,11 @@
 # lora-power-monitor
 Electric Power Sensor that transmits measurements via LoRaWAN.
 
-Sensor is designed to be easily installed, as it uses a UL-listed AC/AC 5VAC plug-in power adapter to sense the AC voltage of the device being measured.  (If the device being measured uses 240VAC, reported power measurements need to be multiplied by 2.)  The AC current of the device being measured is sensed via a clamp-on Current Transformer (CT).  Loads up to 20 Amps can be measured with the parts specified.  Changing the burden resistor on the CT would allow measuremnt of higher current levels.
+Sensor is designed to be easily installed, as it uses a UL-listed AC/AC 5VAC plug-in power adapter to sense the AC voltage of the device being measured.  (If the device being measured uses 240VAC, reported power measurements need to be multiplied by 2.)  The AC current of the device being measured is sensed via a clamp-on Current Transformer (CT).  Loads up to 20 Amps can be measured with the parts specified.  Changing the burden resistor on the CT would allow measurement of higher current levels.
 
-An Adafruit SAMD21 QT Py microcontroller is used for all computing tasks and taking measurement samples of the AC voltage and current. A SEEED Studio Lora-E5 LoRaWAN module handles all the LoRaWAN protocol and radio transceiver tasks.
+An Adafruit SAMD21 QT Py microcontroller is used for all computing tasks and taking measurement samples of the AC voltage and current. A SEEED Studio Lora-E5 LoRaWAN module handles all the LoRaWAN protocol and radio transceiver tasks.  The E5 needs to be configured to work on the US Things Network frequency
+band.  Configuration is done by a separate GitHub project: https://github.com/alanmitchell/e5-lora-config .
+
 CircuitPython 7.3.3 is the programming language (a serial bug was found in 
 CircuitPython 8.0).
 
