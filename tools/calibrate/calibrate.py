@@ -5,12 +5,23 @@
 
 from time import time
 import sys
+from pathlib import Path
 
 import serial.tools.list_ports
 from serial import Serial
 from questionary import confirm
 
 from pzem import read_power
+
+def path_to_calibrate_file():
+    if sys.platform.startswith('lin'):
+        return Path("/media/alan/CIRCUITPY/calibrate.py")
+    elif sys.platform.startswith('win'):
+        for drive in ("D", "E", "F", "G"):
+            p = Path(f"{drive}:\\calibrate.py")
+            if p.exists():
+                return p
+    return None
 
 # Find all serial ports on the machine.
 all_ports = serial.tools.list_ports.comports()
@@ -23,7 +34,8 @@ for p in all_ports:
         port_actual_name = p.device
         break
 if port_actual_name is None:
-    print("ERROR: Serial port for PZEM Actual Power Measurement not found. Exiting...")
+    print("ERROR: Serial port for PZEM Actual Power Measurement not found. Press Enter to Exit...")
+    input()
     sys.exit()
 else:
     print(f"\nFound the Actual Power Measurement device on port {port_actual_name}")
@@ -49,7 +61,8 @@ while do_again:
             port_lora_name = p.device
             break
     if port_lora_name is None:
-        print("ERROR: Serial port LoRa Power Monitor not found. Exiting...")
+        print("ERROR: Serial port LoRa Power Monitor not found. Press Enter to Exit...")
+        input()
         sys.exit()
     else:
         print(f"\nFound the LoRa Power Monitor on port {port_lora_name}\n")
@@ -95,9 +108,13 @@ while do_again:
     write_calib_file = confirm("Do you want to store the new Calibration Constant to the LoRa Power Monitor?").ask()
     if write_calib_file:
         s = f'CALIB_MULT = {new_calib_mult}\n'
-        with open(CALIBRATE_PATH, 'w') as fout:
-            fout.write(s)
-        print('New Calibration multiplier was written to the Power Monitor!')
-        print()
+        calib_path = path_to_calibrate_file()
+        if calib_path:
+            with open(calib_path, 'w') as fout:
+                fout.write(s)
+            print('New Calibration multiplier was written to the Power Monitor!')
+            print()
+        else:
+            print("calibrate.py file was not found")
 
     do_again = confirm("Do you want to calibrate another LoRa Power Monitor").ask()
